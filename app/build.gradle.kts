@@ -89,10 +89,13 @@ dependencies {
     kapt(libs.hilt.android.compiler)
 
     //Tests
-    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.play.services.tasks)
+    testImplementation(libs.kotlinx.coroutines.play.services)
 }
 
 kapt {
