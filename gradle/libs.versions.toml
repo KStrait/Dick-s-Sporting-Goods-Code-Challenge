@@ -12,6 +12,7 @@ composeBom = "2023.08.00"
 mockitoCore = "4.0.0"
 mockitoKotlin = "4.0.0"
 mockk = "1.13.5"
+playServicesLocation = "21.3.0"
 retrofit = "2.9.0"
 okhttp = "4.9.1"
 moshi = "1.12.0"
@@ -38,6 +39,7 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit_converter_moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
 retrofit_converter_scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "retrofit" }

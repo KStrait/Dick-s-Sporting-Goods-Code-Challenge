@@ -70,6 +70,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    //Google Play Services
+    implementation(libs.play.services.location)
+
     //Retrofit, Moshi, OKHttp
     implementation(platform(libs.retrofit))
     implementation(libs.retrofit)

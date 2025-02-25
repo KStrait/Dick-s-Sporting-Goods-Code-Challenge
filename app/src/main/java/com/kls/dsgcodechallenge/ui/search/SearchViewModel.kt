@@ -17,10 +17,6 @@ class SearchViewModel @Inject constructor(private val repository: DSGRepository)
     private val _storeResponse = MutableStateFlow<NetworkResult<List<StoreResult>>>(NetworkResult.Loading)
     val storeResponse: StateFlow<NetworkResult<List<StoreResult>>> = _storeResponse
 
-    init {
-        getStoresByDistance("48220")
-    }
-
     fun getStoresByDistance(addr: String) {
         viewModelScope.launch {
             repository.getStoresByDistance(addr).collect { items ->
