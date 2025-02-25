@@ -14,18 +14,4 @@ import com.kls.dsgcodechallenge.data.StoreResult
 @HiltViewModel
 class MainViewModel @Inject constructor(private val repository: DSGRepository): ViewModel() {
 
-    private val _storeResponse = MutableStateFlow<NetworkResult<List<StoreResult>>>(NetworkResult.Loading)
-    val storeResponse: StateFlow<NetworkResult<List<StoreResult>>> = _storeResponse
-
-    init {
-        getStoresByDistance("48220")
-    }
-
-    fun getStoresByDistance(addr: String) {
-        viewModelScope.launch {
-            repository.getStoresByDistance(addr).collect { items ->
-                _storeResponse.value = items
-            }
-        }
-    }
 }

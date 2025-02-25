@@ -122,7 +122,7 @@ fun StoreItem(store: StoreResult) {
         ) {
             Column {
                 Text(text = store.store.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "${store.distance} | ${store.store.location}", fontSize = 14.sp, color = Color.Gray)
+                Text(text = "${store.distance} Miles | ${store.store.city}, ${store.store.state}", fontSize = 14.sp, color = Color.Gray)
             }
             Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Go")
         }
