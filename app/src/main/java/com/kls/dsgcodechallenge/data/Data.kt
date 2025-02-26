@@ -22,7 +22,6 @@ data class StoreResult( // Represents each entry in the results list
     val distance: String,
     val units: String
 )
-
 data class Store(
     val location: String,
     val chain: String,

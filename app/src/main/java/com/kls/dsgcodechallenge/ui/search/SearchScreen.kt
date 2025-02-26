@@ -1,7 +1,6 @@
 package com.kls.dsgcodechallenge.ui.search
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -50,36 +48,29 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kls.dsgcodechallenge.R
 import com.kls.dsgcodechallenge.data.StoreResult
-import com.kls.dsgcodechallenge.data.NetworkResult
 import com.kls.dsgcodechallenge.extensions.capitalizeWords
-import com.kls.dsgcodechallenge.manager.LocationManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
-    val context = LocalContext.current
-    val locationManager = remember { LocationManager(context) }
-    var isPermissionGranted by remember { mutableStateOf(
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-    )}
+    var isPermissionGranted by remember {
+        mutableStateOf(
+            searchViewModel.permissionChecker.hasLocationPermission()
+        )
+    }
     val storeItems by searchViewModel.storeResponse.collectAsStateWithLifecycle()
+
+    Log.d("Search", "RECOMP")
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
             isPermissionGranted = granted
             if (granted) {
-                fetchLocationAndSearch(locationManager, searchViewModel)
+                searchViewModel.fetchLocationAndSearch()
             }
         }
     )
@@ -96,23 +87,18 @@ fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
             },
             onGpsSearch = {
                 if (isPermissionGranted) {
-                    fetchLocationAndSearch(locationManager, searchViewModel)
+                    searchViewModel.fetchLocationAndSearch()
                 } else {
                     permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                 }
             }
         )
         Spacer(modifier = Modifier.height(16.dp))
-        when (val data = storeItems) {
-            is NetworkResult.Error -> Log.d("Stores", data.exception.toString())
-            NetworkResult.Loading -> Log.d("Stores", "Loading")
-            is NetworkResult.Success -> {
-                val items = data.data
-                if (items.isNotEmpty()) {
-                    StoreList(stores = items)
-                } else {
-                    NoStoresView()
-                }
+        storeItems?.let {
+            if (it.isNotEmpty()) {
+                StoreList(stores = it)
+            } else {
+                NoStoresView()
             }
         }
     }
@@ -175,7 +161,7 @@ fun SearchBar(onSearch: (String) -> Unit, onGpsSearch: () -> Unit) {
 }
 
 @Composable
-fun StoreList(stores: List<StoreResult>) {
+fun StoreList(stores: List<StoreResult>?) {
     Text(
         text = stringResource(id = R.string.stores_near_you),
         fontSize = 16.sp,
@@ -191,11 +177,15 @@ fun StoreList(stores: List<StoreResult>) {
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
-        LazyColumn {
-            itemsIndexed(stores) { index, store ->
-                StoreItem(store)
-                if (index < stores.lastIndex) {
-                    HorizontalDivider(Modifier.padding(start = 16.dp))
+        stores?.let { storeList ->
+            if (storeList.isNotEmpty()) {
+                LazyColumn {
+                    itemsIndexed(storeList) { index, store ->
+                        StoreItem(store)
+                        if (index < storeList.lastIndex) {
+                            HorizontalDivider(Modifier.padding(start = 16.dp))
+                        }
+                    }
                 }
             }
         }
@@ -245,21 +235,5 @@ fun NoStoresView() {
             modifier = Modifier.fillMaxWidth(0.65f),
             text = stringResource(id = R.string.no_stores_found)
         )
-    }
-}
-
-private fun fetchLocationAndSearch(
-    locationManager: LocationManager,
-    searchViewModel: SearchViewModel
-) {
-    CoroutineScope(Dispatchers.IO).launch {
-        val loc = locationManager.getLocation()
-        withContext(Dispatchers.Main) {
-            if (loc != null) {
-                searchViewModel.getStoresByDistance("${loc.latitude}, ${loc.longitude}")
-            } else {
-                Log.d("Search", "Location is null.")
-            }
-        }
     }
 }

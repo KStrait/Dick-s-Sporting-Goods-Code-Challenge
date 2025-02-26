@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.kls.dsgcodechallenge.manager.LocationManager
+import com.kls.dsgcodechallenge.util.PermissionChecker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,10 +24,17 @@ object LocationModule {
 
     @Provides
     @Singleton
+    fun providePermissionChecker(@ApplicationContext context: Context): PermissionChecker {
+        return PermissionChecker(context)
+    }
+
+    @Provides
+    @Singleton
     fun provideLocationManager(
         @ApplicationContext context: Context,
-        fusedLocationClient: FusedLocationProviderClient
+        fusedLocationClient: FusedLocationProviderClient,
+        permissionChecker: PermissionChecker
     ): LocationManager {
-        return LocationManager(context, fusedLocationClient)
+        return LocationManager(context, fusedLocationClient, permissionChecker)
     }
 }
