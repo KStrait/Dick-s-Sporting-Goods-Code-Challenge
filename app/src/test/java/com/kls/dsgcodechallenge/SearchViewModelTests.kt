@@ -1,6 +1,5 @@
 package com.kls.dsgcodechallenge
 
-import android.location.Location
 import com.kls.dsgcodechallenge.data.NetworkResult
 import com.kls.dsgcodechallenge.data.StoreResult
 import com.kls.dsgcodechallenge.data.Store
