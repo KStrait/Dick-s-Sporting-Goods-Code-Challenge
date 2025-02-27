@@ -1,7 +1,6 @@
 package com.kls.dsgcodechallenge.network
 
 import com.kls.dsgcodechallenge.data.StoreResponse
-import com.kls.dsgcodechallenge.data.StoreResult
 import retrofit2.http.GET
 import retrofit2.http.Query
 

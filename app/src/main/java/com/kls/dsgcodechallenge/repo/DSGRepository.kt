@@ -13,12 +13,15 @@ import com.kls.dsgcodechallenge.data.NetworkResult
 @Singleton
 class DSGRepository @Inject constructor(private val webService: WebService) {
 
-    fun getStoresByDistance(addr: String): Flow<List<StoreResult>> = flow {
+
+    // Make API endpoint call to get stores, return exception if any errors.
+    fun getStoresByDistance(addr: String): Flow<NetworkResult<List<StoreResult>>> = flow {
         try {
+            emit(NetworkResult.Loading)
             val data = webService.getStoresByDistance(addr).results
-            emit(data)
+            emit(NetworkResult.Success(data))
         } catch (e: Exception) {
-            emit(emptyList())
+            emit(NetworkResult.Error(e))
         }
     }.flowOn(Dispatchers.IO)
 }

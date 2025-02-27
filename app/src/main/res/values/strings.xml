@@ -3,4 +3,11 @@
     <string name="no_stores_found">We are unable to find stores within 100 miles of search</string>
     <string name="stores_near_you">Stores Near You</string>
     <string name="search_by_zip">Search by ZIP Code</string>
+    <string name="no_location_available">No location available.</string>
+
+    <string name="search">Search</string>
+    <string name="search_by_gps">Search by GPS coordinates</string>
+    <string name="see_store_details">See store details</string>
+    <string name="no_stores">No stores found near you</string>
+    <string name="error">Error</string>
 </resources>

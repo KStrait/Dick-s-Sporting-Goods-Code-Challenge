@@ -1,14 +1,14 @@
 package com.kls.dsgcodechallenge.data
 
 sealed class NetworkResult<out T> {
-    object Loading : NetworkResult<Nothing>()
+    data object Loading : NetworkResult<Nothing>()
     data class Success<T>(val data: T) : NetworkResult<T>()
     data class Error(val exception: Throwable) : NetworkResult<Nothing>()
 }
 
 data class StoreResponse(
     val origin: Origin?,
-    val results: List<StoreResult> // Renamed to StoreResult for clarity
+    val results: List<StoreResult>
 )
 
 data class Origin(
@@ -17,7 +17,7 @@ data class Origin(
     val lng: String
 )
 
-data class StoreResult( // Represents each entry in the results list
+data class StoreResult(
     val store: Store,
     val distance: String,
     val units: String

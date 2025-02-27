@@ -1,7 +1,6 @@
 package com.kls.dsgcodechallenge.ui.search
 
 import android.Manifest
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -10,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,11 +23,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -51,8 +54,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kls.dsgcodechallenge.R
+import com.kls.dsgcodechallenge.data.NetworkResult
 import com.kls.dsgcodechallenge.data.StoreResult
 import com.kls.dsgcodechallenge.extensions.capitalizeWords
+import com.kls.dsgcodechallenge.ui.sharedviews.NetworkExceptionView
 
 @Composable
 fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
@@ -62,8 +67,8 @@ fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
         )
     }
     val storeItems by searchViewModel.storeResponse.collectAsStateWithLifecycle()
-
-    Log.d("Search", "RECOMP")
+    val locationError by searchViewModel.locationError.collectAsStateWithLifecycle()
+    val loading by searchViewModel.loading.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -75,31 +80,50 @@ fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
         }
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xfff5f5f5))
-            .padding(16.dp)
-    ) {
-        SearchBar(
-            onSearch = { zip ->
-                searchViewModel.getStoresByDistance(zip)
-            },
-            onGpsSearch = {
-                if (isPermissionGranted) {
-                    searchViewModel.fetchLocationAndSearch()
-                } else {
-                    permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+    if (locationError) {
+        LocationErrorDialog {
+            searchViewModel.clearLocationError()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xfff5f5f5))
+                .padding(16.dp)
+        ) {
+            SearchBar(
+                onSearch = { zip ->
+                    searchViewModel.getStoresByDistance(zip)
+                },
+                onGpsSearch = {
+                    if (isPermissionGranted) {
+                        searchViewModel.fetchLocationAndSearch()
+                    } else {
+                        permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            when (val data = storeItems) {
+                //  to have a combined loading state in the ViewModel for both location/stores.
+                NetworkResult.Loading -> {}
+                is NetworkResult.Success -> {
+                    val items = data.data
+                    if (items.isNotEmpty()) {
+                        StoreList(stores = items)
+                    } else {
+                        NoStoresView()
+                    }
+                }
+                is NetworkResult.Error -> {
+                    data.exception.message?.let { NetworkExceptionView(error = it) }
                 }
             }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        storeItems?.let {
-            if (it.isNotEmpty()) {
-                StoreList(stores = it)
-            } else {
-                NoStoresView()
-            }
+        }
+        if (loading) {
+            LoadingView()
         }
     }
 }
@@ -117,7 +141,10 @@ fun SearchBar(onSearch: (String) -> Unit, onGpsSearch: () -> Unit) {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(painter = painterResource(R.drawable.ic_search), contentDescription = "Search")
+        Icon(
+            painter = painterResource(R.drawable.ic_search),
+            contentDescription = stringResource(id = R.string.search)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         TextField(
             value = searchText,
@@ -151,7 +178,7 @@ fun SearchBar(onSearch: (String) -> Unit, onGpsSearch: () -> Unit) {
         )
         Icon(
             painter = painterResource(R.drawable.ic_loc_service),
-            contentDescription = "Search by GPS coordinates",
+            contentDescription = stringResource(id = R.string.search_by_gps),
             tint = Color.Unspecified,
             modifier = Modifier.clickable {
                 onGpsSearch()
@@ -161,7 +188,7 @@ fun SearchBar(onSearch: (String) -> Unit, onGpsSearch: () -> Unit) {
 }
 
 @Composable
-fun StoreList(stores: List<StoreResult>?) {
+fun StoreList(stores: List<StoreResult>) {
     Text(
         text = stringResource(id = R.string.stores_near_you),
         fontSize = 16.sp,
@@ -177,15 +204,11 @@ fun StoreList(stores: List<StoreResult>?) {
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
-        stores?.let { storeList ->
-            if (storeList.isNotEmpty()) {
-                LazyColumn {
-                    itemsIndexed(storeList) { index, store ->
-                        StoreItem(store)
-                        if (index < storeList.lastIndex) {
-                            HorizontalDivider(Modifier.padding(start = 16.dp))
-                        }
-                    }
+        LazyColumn {
+            itemsIndexed(stores) { index, store ->
+                StoreItem(store)
+                if (index < stores.lastIndex) {
+                    HorizontalDivider(Modifier.padding(start = 16.dp))
                 }
             }
         }
@@ -213,7 +236,12 @@ fun StoreItem(store: StoreResult) {
                 color = Color.Gray
             )
         }
-        Icon(painter = painterResource(R.drawable.ic_chev_right), contentDescription = "Go")
+        Icon(
+            painter = painterResource(R.drawable.ic_chev_right),
+            contentDescription = stringResource(
+                id = R.string.see_store_details
+            )
+        )
     }
 }
 
@@ -228,12 +256,38 @@ fun NoStoresView() {
     ) {
         Image(
             painterResource(id = R.drawable.ic_empty_search),
-            contentDescription = "No stores found"
+            contentDescription = stringResource(id = R.string.no_stores_found)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             modifier = Modifier.fillMaxWidth(0.65f),
             text = stringResource(id = R.string.no_stores_found)
         )
+    }
+}
+
+@Composable
+fun LocationErrorDialog(clearLocationError: () -> Unit) {
+    AlertDialog(
+        // Reset only on dismiss
+        onDismissRequest = { clearLocationError() },
+        confirmButton = {
+            TextButton(onClick = { clearLocationError() }) {
+                Text(stringResource(id = android.R.string.ok))
+            }
+        },
+        title = { Text(stringResource(id = R.string.error)) },
+        text = { Text(stringResource(id = R.string.no_location_available)) }
+    )
+}
+
+@Composable
+fun LoadingView() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator()
     }
 }

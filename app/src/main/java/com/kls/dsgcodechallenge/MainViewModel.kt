@@ -12,6 +12,6 @@ import com.kls.dsgcodechallenge.data.NetworkResult
 import com.kls.dsgcodechallenge.data.StoreResult
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val repository: DSGRepository): ViewModel() {
+class MainViewModel @Inject constructor(): ViewModel() {
 
 }

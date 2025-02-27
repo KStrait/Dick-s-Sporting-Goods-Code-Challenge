@@ -88,7 +88,6 @@ class LocationManagerTest {
         // Mock permission check to return false
         whenever(permissionChecker.hasLocationPermission()).thenReturn(false)
 
-        // Call the method
         val result = locationManager.getLocation()
 
         // Verify that the result is null

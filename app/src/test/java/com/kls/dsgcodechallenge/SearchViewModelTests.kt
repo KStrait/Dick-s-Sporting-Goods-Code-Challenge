@@ -60,7 +60,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `getStoresByDistance should collect stores from repository successfully`() = runTest {
+    fun `getStoresByDistance should update state to success with stores from repository`() = runTest {
         // Given
         val zipCode = "12345"
 
@@ -110,7 +110,7 @@ class SearchViewModelTest {
             status = "OPEN"
         )
 
-        val expectedStores = listOf(
+        val storeResults = listOf(
             StoreResult(
                 store = store1,
                 distance = "3.5",
@@ -124,23 +124,26 @@ class SearchViewModelTest {
         )
 
         val repositoryFlow = flow {
-            emit(expectedStores)
+            // First emit loading state
+            emit(NetworkResult.Loading)
+            // Then emit success state with data
+            emit(NetworkResult.Success(storeResults))
         }
 
-        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
-
         // When
+        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
         viewModel.getStoresByDistance(zipCode)
 
-        // Then - advance the test dispatcher to allow collecting all values
+        // Then - advance the test dispatcher to collect initial loading state
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Verify repository was called with the zip code
         verify(mockRepository).getStoresByDistance(zipCode)
 
-        // Verify the storeResponse state was updated with the stores
+        // Verify the storeResponse state was updated with the success result
         val result = viewModel.storeResponse.value
-        assertEquals(expectedStores, result)
+        assertTrue(result is NetworkResult.Success)
+        assertEquals(storeResults, (result as NetworkResult.Success).data)
     }
 
     @Test
@@ -150,12 +153,12 @@ class SearchViewModelTest {
         val emptyList = emptyList<StoreResult>()
 
         val repositoryFlow = flow {
-            emit(emptyList)
+            emit(NetworkResult.Loading)
+            emit(NetworkResult.Success(emptyList))
         }
 
-        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
-
         // When
+        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
         viewModel.getStoresByDistance(zipCode)
 
         // Then - advance the test dispatcher
@@ -164,8 +167,66 @@ class SearchViewModelTest {
         // Verify repository was called
         verify(mockRepository).getStoresByDistance(zipCode)
 
-        // Verify the storeResponse state was updated with an empty list
+        // Verify the storeResponse state was updated with a success result containing empty list
         val result = viewModel.storeResponse.value
-        assertTrue(result?.isEmpty() == true)
+        assertTrue(result is NetworkResult.Success)
+        assertTrue((result as NetworkResult.Success).data.isEmpty())
+    }
+
+    @Test
+    fun `getStoresByDistance should handle error from repository`() = runTest {
+        // Given
+        val zipCode = "12345"
+        val errorMessage = "Network error"
+
+        val repositoryFlow = flow {
+            emit(NetworkResult.Loading)
+            emit(NetworkResult.Error(Exception(errorMessage)))
+        }
+
+        // When
+        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
+        viewModel.getStoresByDistance(zipCode)
+
+        // Then - advance the test dispatcher
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify repository was called
+        verify(mockRepository).getStoresByDistance(zipCode)
+
+        // Verify the storeResponse state was updated with an error result
+        val result = viewModel.storeResponse.value
+        assertTrue(result is NetworkResult.Error)
+        assertEquals(errorMessage, (result as NetworkResult.Error).exception.message)
+    }
+
+    @Test
+    fun `getStoresByDistance should start with loading state`() = runTest {
+        // Given
+        val zipCode = "12345"
+
+        // Repository will never emit to simulate long-running operation
+        val repositoryFlow = flow<NetworkResult<List<StoreResult>>> {
+            emit(NetworkResult.Loading)
+            // No further emissions
+        }
+
+        // When
+        `when`(mockRepository.getStoresByDistance(zipCode)).thenReturn(repositoryFlow)
+        viewModel.getStoresByDistance(zipCode)
+
+        // Then - advance the test dispatcher to collect only loading state
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify the storeResponse state was updated with loading state
+        val result = viewModel.storeResponse.value
+        assertTrue(result is NetworkResult.Loading)
+    }
+
+    @Test
+    fun `storeResponse should be loading initially`() = runTest {
+        // Then - verify the initial state is idle
+        val result = viewModel.storeResponse.value
+        assertTrue(result is NetworkResult.Loading)
     }
 }

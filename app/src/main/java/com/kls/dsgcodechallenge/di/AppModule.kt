@@ -65,8 +65,7 @@ internal object AppModule {
     @Provides
     fun provideWebService(
         okHttpClient: OkHttpClient,
-        moshiConverterFactory: MoshiConverterFactory,
-        @ApplicationContext context: Context
+        moshiConverterFactory: MoshiConverterFactory
     ): WebService {
         return Retrofit.Builder()
             .baseUrl(WebService.BASE_URL)
