@@ -21,7 +21,7 @@ class LocationManager(
     private val permissionChecker: PermissionChecker
 ) {
 
-    //Already checking permissions, adding suppress because warning doesn't apply.
+    // Already checking permissions, adding suppress because warning doesn't apply.
     @SuppressLint("MissingPermission")
     suspend fun getLocation(): Location? {
         return withTimeoutOrNull(3000) {
@@ -33,7 +33,7 @@ class LocationManager(
 
                         val cancellationTokenSource = CancellationTokenSource()
 
-                        //Permission already checked above, suppressing warning.
+                        // Permission already checked above, suppressing warning.
                         fusedLocationClient.getCurrentLocation(
                             Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                             cancellationTokenSource.token

@@ -107,7 +107,7 @@ fun StoreListScreen(searchViewModel: SearchViewModel = viewModel()) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             when (val data = storeItems) {
-                //  to have a combined loading state in the ViewModel for both location/stores.
+                // Combined loading state in the ViewModel for both location/stores.
                 NetworkResult.Loading -> {}
                 is NetworkResult.Success -> {
                     val items = data.data
