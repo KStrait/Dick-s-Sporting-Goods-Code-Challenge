@@ -24,14 +24,14 @@ import kotlin.math.min
 @InstallIn(SingletonComponent::class)
 internal object AppModule {
 
-    private const val FETCH_CACHE = "fetch-cache"
+    private const val DSG_CACHE = "dsg-cache"
     private const val MIN_CACHE_SIZE = 5L * 1024L * 1024L // 5MB
     private const val MAX_CACHE_SIZE = 50L * 1024L * 1024L // 50MB
 
     @Provides
     @Singleton
     fun provideCache(@ApplicationContext ctx: Context): Cache {
-        return with (File(ctx.cacheDir, FETCH_CACHE)) {
+        return with (File(ctx.cacheDir, DSG_CACHE)) {
             if (!exists())
                 mkdirs()
             Cache(this, calculateDiskCacheSize(this))
